@@ -29,7 +29,13 @@ def gen_grid(bounds, cell_length, cell_width):
     out.index = list(out.index)
     return out
 
-def geobin(geodata, bins, *args, **kwargs):
+def geobin(
+    geodata,
+    bins,
+    stats=['sum', 'mean', 'min', 'max', 'median', 'var', 'skew', 'std', 'sem', 'mad'],
+    ignore_cols=['geometry'],
+    join_kwargs={'predicate': 'intersects'},
+    *args, **kwargs):
 
     # Read geodata if str and convert to list of gdf
     gdfl = geodata if isinstance(geodata, list) else [geodata]
@@ -38,6 +44,24 @@ def geobin(geodata, bins, *args, **kwargs):
     # Call func if bins is not a gdf
     if not isinstance(bins, gpd.GeoDataFrame):
         bins = bins(*args, **kwargs)
+        
+    # Aggregate data by bins
+    for gdf in gdfl:
+        
+        # Spatially join to bins
+        join = bins.sjoin(gdf, **join_kwargs)
+        group = join.groupby(join.index)
+        
+        # Aggregate count
+        counts = join.groupby(join.index).size().fillna(0)
+        counts.name = f'{name}_count'
+        bins = bins.join(counts)
+        
+        # Aggregate by stats
+        agg = group.agg({c: stats for c in data.columns if c not in ignore_cols})
+        agg.columns = ['_'.join(c).strip() for c in agg.columns]
+        bins = bins.join(agg)
 
-    # 
+    # Return binned aggregate data
+    out = bins
     return out
