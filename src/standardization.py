@@ -1,38 +1,12 @@
 import geopandas as gpd
-import numpy as np
 
 from data import read_geodata
-
-from shapely.geometry import Polygon
-
-# Generate rectangular grids using a bounding box
-# Edited from user Mativane's code
-# https://gis.stackexchange.com/questions/269243/creating-polygon-grid-using-geopandas
-def gen_grid(bounds, cell_length, cell_width):
-    
-    # Get bounds or extract if gdf
-    xmin, ymin, xmax, ymax = bounds.total_bounds if isinstance(bounds, gpd.GeoDataFrame) else bounds
-
-    # Calculate rows and cols
-    cols = list(np.arange(xmin, xmax + cell_width, cell_width))
-    rows = list(np.arange(ymin, ymax + cell_length, cell_length))
-
-    # Generate grid based on bounds, cols, and rows
-    polygons = []
-    for x in cols[:-1]:
-        for y in rows[:-1]:
-            polygons.append(Polygon([(x,y), (x + cell_width, y), (x + cell_width, y+cell_length), (x, y+cell_length)]))
-
-    # Return grid as gdf
-    crs = bounds.crs if isinstance(bounds, gpd.GeoDataFrame) else None
-    out = gpd.GeoDataFrame({'geometry': polygons}, crs=crs)
-    out.index = list(out.index)
-    return out
 
 def geobin(
     geodata,
     bins,
-    stats=['sum', 'mean', 'min', 'max', 'median', 'var', 'skew', 'std', 'sem', 'mad'],
+    num_stats=['sum', 'mean', 'min', 'max', 'median', 'var', 'skew', 'std', 'sem', 'mad'],
+    str_stats=[],
     ignore_cols=['geometry'],
     join_kwargs={'predicate': 'intersects'},
     *args, **kwargs):
@@ -58,7 +32,8 @@ def geobin(
         bins = bins.join(counts)
         
         # Aggregate by stats
-        agg = group.agg({c: stats for c in data.columns if c not in ignore_cols})
+        # TODO: Need to aggregate depending on data type (str or numeric)
+        agg = group.agg({c: num_stats for c in gdf.columns if c not in ignore_cols})
         agg.columns = ['_'.join(c).strip() for c in agg.columns]
         bins = bins.join(agg)
 
