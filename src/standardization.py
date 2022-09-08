@@ -1,26 +1,27 @@
 import geopandas as gpd
 
-from data import read_geodata
+from aggregation import *
+
+from pandas.api.types import is_numeric_dtype, is_string_dtype
 
 def geobin(
-    geodata,
+    geodict,
     bins,
-    num_stats=['sum', 'mean', 'min', 'max', 'median', 'var', 'skew', 'std', 'sem', 'mad'],
-    str_stats=[],
+    stats=['sum', 'mean', 'min', 'max', 'median', 'var', 'skew', 'std', 'sem', 'mad', mode, quantile25, quantile50, quantile75],
+    ucount_threshold=100,
     ignore_cols=['geometry'],
     join_kwargs={'predicate': 'intersects'},
     *args, **kwargs):
-
-    # Read geodata if str and convert to list of gdf
-    gdfl = geodata if isinstance(geodata, list) else [geodata]
-    gdfl = [read_geodata(gdf) if isinstance(gdf, str) else gdf for gdf in gdfl]
+    
+    # Convert to general dict if single gdf
+    geodict = {'data': geodict} if isinstance(geodict, gpd.GeoDataFrame) else geodict
 
     # Call func if bins is not a gdf
     if not isinstance(bins, gpd.GeoDataFrame):
         bins = bins(*args, **kwargs)
         
     # Aggregate data by bins
-    for gdf in gdfl:
+    for name, gdf in geodict.items():
         
         # Spatially join to bins
         join = bins.sjoin(gdf, **join_kwargs)
@@ -31,12 +32,36 @@ def geobin(
         counts.name = f'{name}_count'
         bins = bins.join(counts)
         
-        # Aggregate by stats
-        # TODO: Need to aggregate depending on data type (str or numeric)
-        agg = group.agg({c: num_stats for c in gdf.columns if c not in ignore_cols})
-        agg.columns = ['_'.join(c).strip() for c in agg.columns]
-        bins = bins.join(agg)
+        # Aggregate by stats if numeric
+        num_columns = [c for c in gdf.columns if is_numeric_dtype(gdf[c]) and c not in ignore_cols]
+        if len(num_columns) > 0:
+            agg = group.agg({c: stats for c in num_columns})
+            agg.columns = [f'{name}_{"_".join(c).strip()}' for c in agg.columns]
+            bins = bins.join(agg)
+        
+        # Aggregate unique count if str and unique values under threshold
+        ufreq = []
+        str_columns = [c for c in gdf.columns if is_string_dtype(gdf[c]) and c not in ignore_cols]
+        str_columns = [c for c in str_columns if gdf[c].unique().size <= ucount_threshold]
+        if len(str_columns) > 0:
+            for c in str_columns:
 
+                # Get possible unique values in col
+                possible = gdf[c].unique()
+
+                # Count freq for each unique value
+                f = group.apply(ucount, c=c, possible=possible)
+
+                # Rename freq cols
+                prefix = c.replace(f'{name}_', '')
+                f.columns = [f'{name}_{c}_count' for c in f.columns]
+                ufreq.append(f)
+
+            # Combine count freq
+            ufreq = pd.concat(ufreq, axis=1)
+            ufreq.index = ufreq.index.get_level_values(0)
+            bins = bins.join(ufreq)
+        
     # Return binned aggregate data
     out = bins
     return out

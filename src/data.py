@@ -56,10 +56,3 @@ def gen_grid(bounds, cells=None, cell_width=None, cell_height=None):
         out.index = list(out.index)
 
     return out
-
-def read_geodata(file_path, *args, **kwargs):
-    out = gpd.read_file(filename=file_path, *args, **kwargs)
-    return out
-
-def write_geodata(gdf, file_path, *args, **kwargs):
-    gdf.to_file(filename=file_path, *args, **kwargs)
