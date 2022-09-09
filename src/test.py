@@ -1,8 +1,13 @@
-import standardization
+import preprocess
 import data
+import models
 import geopandas as gpd
 
 x = gpd.read_file(gpd.datasets.get_path('naturalearth_cities'))
-grid = data.gen_grid(x, 10)
 x['numbas'] = 1
-bins = standardization.geobin({'cities': x}, grid)
+
+grid = data.gen_grid(x, 10)
+bins = preprocess.geobin({'cities': x}, grid)
+
+aml = models.AutoML()
+aml.train()
