@@ -76,6 +76,7 @@ def geobin(
         if len(num_columns) > 0:
             agg = group.agg({c: stats for c in num_columns})
             agg.columns = [f'{name}_{"_".join(c).strip()}' for c in agg.columns]
+            agg = agg[agg.columns].apply(pd.to_numeric, errors='coerce', axis=1)
             bins = bins.join(agg)
         
         # Aggregate unique count if str and unique values under threshold

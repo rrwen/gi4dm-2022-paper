@@ -1,3 +1,4 @@
+import sklearn.metrics
 import sys
 
 from autosklearn.classification import AutoSklearnClassifier
@@ -6,7 +7,9 @@ from tpot import TPOTClassifier, TPOTRegressor
 
 _autosklearn_default_kwargs = dict(
     resampling_strategy = 'cv',
-    resampling_strategy_arguments = {'folds': 10}
+    resampling_strategy_arguments = {'folds': 10},
+    memory_limit = None,
+    time_left_for_this_task = 30
 )
 
 _tpot_default_kwargs = dict(
@@ -41,8 +44,8 @@ class AutoMLModel:
     def fit(self, x, y, *args, **kwargs):
         
         # Get input x and output y data for training
-        x = x[[c for c in x.columns if c != y]] if isinstance(y, str) else x
         y = x[y] if isinstance(y, str) else y
+        x = x[[c for c in x.columns if c != y]] if isinstance(y, str) else x
         
         # Train model and set attributes
         self.last_x = x
@@ -62,10 +65,12 @@ class AutoMLModel:
     def score(self, metric=None, y=None, predicted=None,  *args, **kwargs):
         
         # Get metrics from sklearn
-        metric = 'f1_score' if self.model_type == 'classifier' else 'mean_squared_error'
+        metric = 'f1_score' if self.model_type == 'classifier' else 'r2_score'
         metric = getattr(sklearn.metrics, metric) if isinstance(metric, str) else metric
         
         # Calculate score with metric
+        y = y if y else self.last_y
+        predicted = predicted if predicted else self.last_predicted
         out = metric(y, predicted, *args, **kwargs)
         
         # Set attributes and return
