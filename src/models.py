@@ -19,11 +19,13 @@ _tpot_default_kwargs = dict(
 )
 
 def _is_autosklearn(model):
-    out = model.__name__.lower() in ['autosklearnclassifier', 'autosklearnregressor']
+    name = model.__name__ if hasattr(model, '__name__') else type(model).__name__
+    out = name.lower() in ['autosklearnclassifier', 'autosklearnregressor']
     return out
 
 def _is_tpot(model):
-    out = model.__name__.lower() in ['tpotclassifier', 'tpotregressor']
+    name = model.__name__ if hasattr(model, '__name__') else type(model).__name__
+    out = name.lower() in ['tpotclassifier', 'tpotregressor']
     return out
 
 class AutoMLModel:
