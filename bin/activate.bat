@@ -1,1 +1,0 @@
-conda activate gi4dm-2022-paper
