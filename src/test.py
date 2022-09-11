@@ -11,5 +11,8 @@ bins = preprocess.geobin({'cities': x}, grid)
 x = pd.DataFrame(bins).drop('geometry', axis=1)
 x = x.fillna(0)
 
-aml = models.AutoMLModel('AutoSklearnRegressor')
-aml.fit(x, 'cities_count')
+ask = models.AutoMLModel('AutoSklearnRegressor')
+ask.fit(x=x, y=x.cities_count)
+
+tpt = models.AutoMLModel('TPOTRegressor')
+tpt.fit(x=x, y=x.cities_count)

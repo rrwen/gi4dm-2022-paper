@@ -1,3 +1,4 @@
+import pandas as pd
 import sklearn.metrics
 import sys
 
@@ -13,29 +14,37 @@ _autosklearn_default_kwargs = dict(
 )
 
 _tpot_default_kwargs = dict(
-    warm_start = True
+    warm_start = True,
+    max_time_mins = 0.5
 )
+
+def _is_autosklearn(model):
+    out = model.__name__.lower() in ['autosklearnclassifier', 'autosklearnregressor']
+    return out
+
+def _is_tpot(model):
+    out = model.__name__.lower() in ['tpotclassifier', 'tpotregressor']
+    return out
 
 class AutoMLModel:
     
-    def __init__(self, model=AutoSklearnClassifier, model_type=None, *args, **kwargs):
+    def __init__(self, model=TPOTClassifier, *args, **kwargs):
         
         # Convert str to model class
         model = getattr(sys.modules[__name__], model) if isinstance(model, str) else model
         
         # Auto determine model type
-        if not model_type:
-            if 'class' in model.__name__.lower():
-                self.model_type = 'classifier'
-            elif 'regress' in model.__name__.lower():
-                self.model_type = 'regressor'
-            else:
-                self.model_type = 'unknown'
+        if 'class' in model.__name__.lower():
+            self.model_type = 'classifier'
+        elif 'regress' in model.__name__.lower():
+            self.model_type = 'regressor'
+        else:
+            self.model_type = 'unknown'
             
         # Set default kwargs for model
-        if model.__name__.lower() in ['autosklearnclassifier', 'autosklearnregressor']:
+        if _is_autosklearn(model):
             kwargs = _autosklearn_default_kwargs | kwargs
-        elif model.__name__.lower() in ['tpotclassifier', 'tpotregressor']:
+        elif _is_tpot(model):
             kwargs = _tpot_default_kwargs | kwargs
             
         # Initiate model with params
@@ -45,11 +54,9 @@ class AutoMLModel:
         
         # Get input x and output y data for training
         y = x[y] if isinstance(y, str) else y
-        x = x[[c for c in x.columns if c != y]] if isinstance(y, str) else x
+        x = x[[c for c in x.columns if c != y.name]]
         
-        # Train model and set attributes
-        self.last_x = x
-        self.last_y = y
+        # Train model
         self.model.fit(x, y, *args, **kwargs)
         
         # Refit if autosklearn cv
@@ -57,8 +64,19 @@ class AutoMLModel:
             if self.model.resampling_strategy.lower() == 'cv':
                 self.model.refit(x, y)
         
-    def predict(self, *args, **kwargs):
-        out = self.model.predict(*args, **kwargs)
+        # Get model details from fitting
+        if _is_autosklearn(self.model):
+            self.model_details = pd.DataFrame(self.model.cv_results_)
+        if _is_tpot(self.model):
+            self.model_details = pd.DataFrame.from_dict(self.model.evaluated_individuals_, orient='index').reset_index(drop=True)
+        
+        # Set last fitted input x and output y
+        self.last_x = x
+        self.last_y = y
+        
+    def predict(self, x=None, *args, **kwargs):
+        x = x if x else self.last_x
+        out = self.model.predict(x, *args, **kwargs)
         self.last_predicted = out
         return out
     
