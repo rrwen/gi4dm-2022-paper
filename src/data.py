@@ -56,3 +56,12 @@ def gen_grid(bounds, cells=None, cell_width=None, cell_height=None):
         out.index = list(out.index)
 
     return out
+
+def df2params(df, constraints=None):
+    # x1 = df.query('col == "value"').col
+    # idx = x1.index.tolist()
+    # df.loc[idx, 'col'] = ['val1', 'val2']
+    pass
+
+def params2df():
+    pass
