@@ -13,7 +13,8 @@ def create_params(df, gconstr={}, lconstr={}, format_colnames=data.format_colnam
     out = {
         'column': [],
         'param': [],
-        'index': []
+        'index': [],
+        'value': []
     }
     
     # Create params from constraints and df
@@ -34,7 +35,8 @@ def create_params(df, gconstr={}, lconstr={}, format_colnames=data.format_colnam
         # Append parameters and their indices for opt
         out['column'] += [c] * len(values)
         out['param'] += [f'{c}_{i}' for i, v in zip(index, values)]
-        out['index'] += values
+        out['index'] += index
+        out['value'] += values
         
     # Create params df and return
     out = pd.DataFrame(out)
