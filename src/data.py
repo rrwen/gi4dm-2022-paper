@@ -3,6 +3,11 @@ import numpy as np
 
 from shapely.geometry import box, Polygon
 
+# Format col names to be lowercase and underscore
+def format_colnames(df):
+    out = df.columns.str.lower().replace(' ', '_').replace('\W', '')
+    return out
+
 # Generate rectangular grids using a bounding box
 def gen_grid(bounds, cells=None, cell_width=None, cell_height=None):
     
