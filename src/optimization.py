@@ -3,41 +3,41 @@ import data
 from bayes_opt import BayesianOptimization
 
 
-def create_params(df, gconstr=None, lconstr=None, format_colnames=data.format_colnames):
-    
-    # TODO: build dataframe for params
+def create_params(df, gconstr={}, lconstr={}, format_colnames=data.format_colnames):
     
     # Apply global constraints as query
     df = df.query(gconstr['query']) if gconstr else df
     df.columns = format_colnames(df.columns)
     
-    # 
-    out = []
-    i = 0
+    # Construct param df structure
+    out = {
+        'column': [],
+        'param': [],
+        'index': []
+    }
+    
+    # Create params from constraints and df
     for c in df.columns:
         
+        # Apply local constraints if avail
         if c in lconstr:
             constr = lconstr[c]
             values = df.query(constr['query'])[c]
         else:
             constr = None
             values = df[c]
+        
+        # Get idx and convert values to list
         index = values.index.tolist()
+        values = values.tolist()
         
-        # Track start and end of flattened df
-        start = i
-        i += len(values)
-        end = i
+        # Append parameters and their indices for opt
+        out['column'] += [c] * len(values)
+        out['param'] += [f'{c}_{i}' for i, v in zip(index, values)]
+        out['index'] += values
         
-        # Append 
-        out.append({
-            'name': c,
-            'start': start,
-            'end': end,
-            'values': values,
-            'index': index,
-            'constraints': constr
-        })
+    # Create params df and return
+    out = pd.DataFrame(out)
     return out
 
 class Optimizer:
