@@ -18,16 +18,6 @@ _tpot_default_kwargs = dict(
     max_time_mins = 0.5
 )
 
-def _is_autosklearn(model):
-    name = model.__name__ if hasattr(model, '__name__') else type(model).__name__
-    out = name.lower() in ['autosklearnclassifier', 'autosklearnregressor']
-    return out
-
-def _is_tpot(model):
-    name = model.__name__ if hasattr(model, '__name__') else type(model).__name__
-    out = name.lower() in ['tpotclassifier', 'tpotregressor']
-    return out
-
 class AutoMLModel:
     
     def __init__(self, model=TPOTClassifier, *args, **kwargs):
@@ -35,22 +25,33 @@ class AutoMLModel:
         # Convert str to model class
         model = getattr(sys.modules[__name__], model) if isinstance(model, str) else model
         
+        # Get class name of model
+        name = model.__name__ if hasattr(model, '__name__') else type(model).__name__
+        
         # Auto determine model type
-        if 'class' in model.__name__.lower():
-            self.model_type = 'classifier'
-        elif 'regress' in model.__name__.lower():
-            self.model_type = 'regressor'
+        if 'class' in name.lower():
+            mtype = 'classifier'
+        elif 'regress' in name.lower():
+            mtype = 'regressor'
         else:
-            self.model_type = 'unknown'
+            mtype = 'unknown'
             
         # Set default kwargs for model
-        if _is_autosklearn(model):
+        if name.lower() in ['autosklearnclassifier', 'autosklearnregressor']:
             kwargs = _autosklearn_default_kwargs | kwargs
-        elif _is_tpot(model):
+            group = 'autosklearn'
+        elif name.lower() in ['tpotclassifier', 'tpotregressor']:
             kwargs = _tpot_default_kwargs | kwargs
+            group = 'tpot'
+        else:
+            group = 'unknown'
             
-        # Initiate model with params
+        # Set attrs
         self.model = model(*args, **kwargs)
+        self.model_name = name
+        self.model_group = group
+        self.model_call = call
+        self.model_type = mtype
     
     def fit(self, x, y, *args, **kwargs):
         
@@ -67,9 +68,9 @@ class AutoMLModel:
                 self.model.refit(x, y)
         
         # Get model details from fitting
-        if _is_autosklearn(self.model):
+        if self.model_group == 'autosklearn':
             self.model_details = pd.DataFrame(self.model.cv_results_)
-        if _is_tpot(self.model):
+        if self.model_group == 'tpot':
             self.model_details = pd.DataFrame.from_dict(self.model.evaluated_individuals_, orient='index').reset_index(drop=True)
         
         # Set last fitted input x and output y
