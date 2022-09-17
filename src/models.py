@@ -20,7 +20,7 @@ _tpot_default_kwargs = dict(
 
 class AutoMLModel:
     
-    def __init__(self, model=TPOTClassifier, *args, **kwargs):
+    def __init__(self, model=TPOTClassifier, metric=None, metric_positive=None, *args, **kwargs):
         
         # Convert str to model class
         model = getattr(sys.modules[__name__], model) if isinstance(model, str) else model
@@ -35,6 +35,17 @@ class AutoMLModel:
             mtype = 'regressor'
         else:
             mtype = 'unknown'
+            
+        # Auto determine metric
+        if not metric:
+            metric = 'f1_score' if mtype == 'classifier' else 'r2_score'
+            
+        # Auto determine if positive metric (higher values better)
+        if metric_positive is None:
+            if any([txt in metric.lower() for txt in ['error', 'loss', 'deviance']]):
+                metric_positive = False
+            else:
+                metric_positive = True
             
         # Set default kwargs for model
         if name.lower() in ['autosklearnclassifier', 'autosklearnregressor']:
@@ -52,6 +63,8 @@ class AutoMLModel:
         self.model_group = group
         self.model_call = call
         self.model_type = mtype
+        self.model_metric = metric
+        self.model_metric_positive = metric_positive
     
     def fit(self, x, y, *args, **kwargs):
         
@@ -86,7 +99,7 @@ class AutoMLModel:
     def score(self, metric=None, y=None, predicted=None,  *args, **kwargs):
         
         # Get metrics from sklearn
-        metric = 'f1_score' if self.model_type == 'classifier' else 'r2_score'
+        metric = metric if metric else self.model_metric
         metric = getattr(sklearn.metrics, metric) if isinstance(metric, str) else metric
         
         # Calculate score with metric
@@ -96,6 +109,5 @@ class AutoMLModel:
         
         # Set attributes and return
         self.last_score = out
-        self.last_metric = metric
-        self.last_metric_name = metric.__name__
+        self.last_metric = metric.__name__
         return out
