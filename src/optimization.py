@@ -65,7 +65,7 @@ def _create_func(model, x, y, params, metric, mult=1):
 
 class Optimizer:
     
-    def __init__(self, model, gconstr=None, lconstr=None, x=None, y=None, optimizer=BayesianOptimization, *args, **kwargs):
+    def __init__(self, model, optimizer=BayesianOptimization, gconstr=None, lconstr=None, x=None, y=None, infer_bounds=True *args, **kwargs):
         
         # Get class name of opt
         name = optimizer.__name__ if hasattr(optimizer, '__name__') else type(optimizer).__name__
@@ -78,11 +78,18 @@ class Optimizer:
         params = _create_params(x=x, gconstr=gconstr, lconstr=lconstr)
         params['value_orig'] = params['value']
         
+        # Calculate opt bounds
+        for k, v in lconstr.items():
+            if 'bounds' not in v and infer_bounds:
+                lconstr[k]['bounds'] = (x[k].min, x[k].max)
+        bounds = {k: v['bounds'] for k, v in lconstr.items()}
+        
         # Add opt group and call
         if name.lower() in 'bayesianoptimization':
             group = 'bayesian'
             call = 'maximize'
             kwargs['f'] = func
+            kwargs['pbounds'] = bounds
         else:
             group = 'unknown'
             call = 'unknown'
@@ -114,6 +121,7 @@ class Optimizer:
         self.model_gconstr = gconstr
         self.model_lconstr = lconstr
         self.model_params = params
+        self.model_params_bounds = bounds
         
     def optimize(self, *args, **kwargs):
         # TODO
