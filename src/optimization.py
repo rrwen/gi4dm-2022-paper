@@ -124,7 +124,10 @@ class Optimizer:
         self.model_params_bounds = bounds
         
     def optimize(self, *args, **kwargs):
-        # TODO
-        # df.loc[idx, 'col'] = ['val1', 'val2']
+        
+        # Run optimization
         getattr(self.optimizer, self.optimizer_call)(*args, **kwargs)
         
+        # Get optimal params from run
+        if self.optimizer_name.lower() == 'bayesianoptimization':
+            self.optimal = self.optimizer.max
