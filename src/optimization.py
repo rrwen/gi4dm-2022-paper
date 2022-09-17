@@ -44,7 +44,7 @@ def _create_params(df, gconstr={}, lconstr={}):
 
 # Create optimization function
 def _create_func(model, params):
-    pass
+    
 
 class Optimizer:
     
