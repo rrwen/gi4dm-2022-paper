@@ -1,5 +1,7 @@
 import data
+import numpy as np
 import pandas as pd
+import sys
 
 from bayes_opt import BayesianOptimization
 
@@ -14,7 +16,8 @@ def _create_params(x, gconstr={}, lconstr={}):
         'column': [],
         'row': [],
         'param': [],
-        'value': []
+        'value': [],
+        'bounds': []
     }
     
     # Create params from constraints and df
@@ -32,11 +35,15 @@ def _create_params(x, gconstr={}, lconstr={}):
         rows = values.index.tolist()
         values = values.tolist()
         
+        # Get bounds from data or user defined
+        bounds = constr['bounds'] if constr else (x[c].min(), x[c].max())
+        
         # Append parameters and their indices for opt
         out['column'] += [c] * len(values)
         out['row'] += rows
         out['param'] += [f'{c}_{i}' for i, v in zip(rows, values)]
         out['value'] += values
+        out['bounds'] += [bounds] * len(values)
         
     # Create params df and return
     out = pd.DataFrame(out)
@@ -44,10 +51,11 @@ def _create_params(x, gconstr={}, lconstr={}):
     return out
 
 # Create optimization function
-def _create_func(model, x, y, params, metric, mult=1):
+def _create_func(model, x, y, params, yfunc, mult=1):
     def f(**kwargs):
         
         # Use param values for simulated x
+        print(kwargs)
         params.loc[kwargs.keys(), 'value'] = list(kwargs.values())
         xs = x.copy()
         
@@ -57,17 +65,30 @@ def _create_func(model, x, y, params, metric, mult=1):
             xs.loc[p.row, c] = p.value
         
         # Run prediction on simulated x input
-        model.predict(xs)
-        out = model.score(y=y) * mult
+        predicted = model.predict(xs)
+        out = yfunc(predicted) * mult
         return out
     
     return f
 
 class Optimizer:
     
-    def __init__(self, model, optimizer=BayesianOptimization, gconstr=None, lconstr=None, x=None, y=None, infer_bounds=True *args, **kwargs):
+    def __init__(
+        self,
+        model,
+        optimizer=BayesianOptimization,
+        gconstr={},
+        lconstr={},
+        x=None,
+        y=None,
+        yfunc='sum',
+        ymax=True,
+        infer_bounds=True,
+        mult=None,
+        *args, **kwargs):
         
-        # Get class name of opt
+        # Get class name and optimizer
+        optimizer = getattr(sys.modules[__name__], optimizer) if isinstance(optimizer, str) else optimizer
         name = optimizer.__name__ if hasattr(optimizer, '__name__') else type(optimizer).__name__
         
         # Auto determine x and y model input and output
@@ -79,55 +100,58 @@ class Optimizer:
         params['value_orig'] = params['value']
         
         # Calculate opt bounds
-        for k, v in lconstr.items():
-            if 'bounds' not in v and infer_bounds:
-                lconstr[k]['bounds'] = (x[k].min, x[k].max)
-        bounds = {k: v['bounds'] for k, v in lconstr.items()}
+        bounds = {p: b for p, b in zip(params.param, params.bounds)}
         
         # Add opt group and call
+        group = 'unknown'
+        call = 'unknown'
         if name.lower() in 'bayesianoptimization':
             group = 'bayesian'
             call = 'maximize'
-            kwargs['f'] = func
-            kwargs['pbounds'] = bounds
-        else:
-            group = 'unknown'
-            call = 'unknown'
             
         # Auto determine opt type and multiplier
+        otype = 'unknown'
         if 'max' in call.lower():
             otype = 'maximizer'
-            mult = 1 if model.model_metric_positive else -1
+            mult = 1 if ymax else -1 if mult is None else mult
         elif 'min' in call.lower():
             otype = 'minimizer'
-            mult = -1 if model.model_metric_positive else 1
-        else:
-            otype = 'unknown'
-        
+            mult = -1 if ymax else 1 if mult is None else mult
+            
         # Create opt func
-        func = _create_func(model=model, x=x, y=y, params=params, mult=mult)
+        yfunc = getattr(np, yfunc) if isinstance(yfunc, str) else yfunc
+        func = _create_func(model=model, x=x, y=y, params=params, yfunc=yfunc, mult=mult)
         
-        # Set opt attrs
+        # Add kwargs based on group
+        if name.lower() in 'bayesianoptimization':
+            kwargs['f'] = func
+            kwargs['pbounds'] = bounds
+        
+        # Set attrs
         self.optimizer = optimizer(*args, **kwargs)
         self.optimizer_name = name
         self.optimizer_group = group
         self.optimizer_call = call
         self.optimizer_type = otype
-        
-        # Set model attrs
+        self.optimizer_func = func
+        self.optimizer_yfunc = yfunc
+        self.optimizer_ymax = ymax
+        self.optimizer_mult = mult
+        self.optimizer_gconstr = gconstr
+        self.optimizer_lconstr = lconstr
+        self.optimizer_params = params
+        self.optimizer_bounds = bounds
+        self.optimizer_x = x
+        self.optimizer_y = y
         self.model = model
-        self.model_x = x
-        self.model_y = y
-        self.model_gconstr = gconstr
-        self.model_lconstr = lconstr
-        self.model_params = params
-        self.model_params_bounds = bounds
         
     def optimize(self, *args, **kwargs):
         
         # Run optimization
         getattr(self.optimizer, self.optimizer_call)(*args, **kwargs)
         
-        # Get optimal params from run
+        # Get optimal params from runs so far
         if self.optimizer_name.lower() == 'bayesianoptimization':
             self.optimal = self.optimizer.max
+            self.optimal_y = self.optimal['target'] * self.optimizer_mult
+            self.optimal_params = self.optimal['params']

@@ -61,7 +61,6 @@ class AutoMLModel:
         self.model = model(*args, **kwargs)
         self.model_name = name
         self.model_group = group
-        self.model_call = call
         self.model_type = mtype
         self.model_metric = metric
         self.model_metric_positive = metric_positive
@@ -91,7 +90,7 @@ class AutoMLModel:
         self.last_y = y
         
     def predict(self, x=None, *args, **kwargs):
-        x = x if x else self.last_x
+        x = x if x is not None else self.last_x
         out = self.model.predict(x, *args, **kwargs)
         self.last_predicted = out
         return out
@@ -103,8 +102,8 @@ class AutoMLModel:
         metric = getattr(sklearn.metrics, metric) if isinstance(metric, str) else metric
         
         # Calculate score with metric
-        y = y if y else self.last_y
-        predicted = predicted if predicted else self.last_predicted
+        y = y if y is not None else self.last_y
+        predicted = predicted if predicted is not None else self.last_predicted
         out = metric(y, predicted, *args, **kwargs)
         
         # Set attributes and return
