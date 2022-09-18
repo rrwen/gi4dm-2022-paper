@@ -6,7 +6,7 @@ import sys
 from bayes_opt import BayesianOptimization
 
 # Create optimization parameters from dataframe
-def _create_params(x, gconstr={}, lconstr={}):
+def _create_params(x, lconstr, gconstr={}):
     
     # Apply global constraints as query
     x = x.query(gconstr['query']) if gconstr else x
@@ -21,15 +21,11 @@ def _create_params(x, gconstr={}, lconstr={}):
     }
     
     # Create params from constraints and df
-    for c in x.columns:
+    for c in lconstr:
         
         # Apply local constraints if avail
-        if c in lconstr:
-            constr = lconstr[c]
-            values = x.query(constr['query'])[c]
-        else:
-            constr = None
-            values = x[c]
+        constr = lconstr[c]
+        values = x.query(constr['query'])[c] if 'query' in constr else x[c]
         
         # Get rows and convert values to list
         rows = values.index.tolist()
@@ -76,9 +72,9 @@ class Optimizer:
     def __init__(
         self,
         model,
+        lconstr,
         optimizer=BayesianOptimization,
         gconstr={},
-        lconstr={},
         x=None,
         y=None,
         yfunc='sum',
@@ -155,3 +151,4 @@ class Optimizer:
             self.optimal = self.optimizer.max
             self.optimal_y = self.optimal['target'] * self.optimizer_mult
             self.optimal_params = self.optimal['params']
+            self.optimal_details = pd.DataFrame([{'target': r['target']} | r['params'] for r in self.optimizer.res])

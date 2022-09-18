@@ -4,18 +4,24 @@ import sys
 
 from autosklearn.classification import AutoSklearnClassifier
 from autosklearn.regression import AutoSklearnRegressor
+from sklearn.inspection import permutation_importance
 from tpot import TPOTClassifier, TPOTRegressor
 
 _autosklearn_default_kwargs = dict(
     resampling_strategy = 'cv',
     resampling_strategy_arguments = {'folds': 10},
     memory_limit = None,
-    time_left_for_this_task = 30
+    time_left_for_this_task = 60
 )
 
 _tpot_default_kwargs = dict(
     warm_start = True,
-    max_time_mins = 0.5
+    max_time_mins = 1
+)
+
+_permutation_importance_default_kwargs = dict(
+    n_repeats=10,
+    random_state=0
 )
 
 class AutoMLModel:
@@ -67,6 +73,9 @@ class AutoMLModel:
     
     def fit(self, x, y, *args, **kwargs):
         
+        # Get numeric data only
+        x = x.select_dtypes('number')
+        
         # Get input x and output y data for training
         y = x[y] if isinstance(y, str) else y
         x = x[[c for c in x.columns if c != y.name]]
@@ -90,12 +99,18 @@ class AutoMLModel:
         self.last_y = y
         
     def predict(self, x=None, *args, **kwargs):
+        
+        # Predict on x input
         x = x if x is not None else self.last_x
         out = self.model.predict(x, *args, **kwargs)
+        
+        # Set attrs and return prediction
         self.last_predicted = out
+        self.last_predicted_args = args
+        self.last_predicted_kwargs = kwargs
         return out
     
-    def score(self, metric=None, y=None, predicted=None,  *args, **kwargs):
+    def score(self, metric=None, y=None, predicted=None, *args, **kwargs):
         
         # Get metrics from sklearn
         metric = metric if metric else self.model_metric
@@ -109,4 +124,30 @@ class AutoMLModel:
         # Set attributes and return
         self.last_score = out
         self.last_metric = metric.__name__
+        self.last_score_args = args
+        self.last_metric_args = kwargs
+        return out
+    
+    def importance(x=None, y=None, *args, **kwargs):
+        
+        # Set data for calculating variable importance
+        x = x if x is not None else self.last_x
+        y = y if y is not None else self.last_y
+        
+        # Calculate variable permutation importance
+        kwargs = _permutation_importance_default_kwargs | kwargs
+        results = permutation_importance(self.model, x, y, *args, **kwargs)
+        
+        # Get agg var importance into out df and sort
+        out = pd.DataFrame({
+            'variable': 
+            'importance_mean': results['importances_mean'],
+            'importance_std': results['importances_std']
+        }).sort_values(by='importance_mean', ascending=False)
+        
+        # Set attrs and return importance
+        self.last_importance = out
+        self.last_importance_args = args
+        self.last_importance_kwargs = kwargs
+        self.last_importance_details = results['importances']
         return out
