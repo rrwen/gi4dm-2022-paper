@@ -26,7 +26,12 @@ ask.fit(x=x, y='collisions_count')
 tpt = models.AutoMLModel('TPOTRegressor')
 tpt.fit(x=x, y='collisions_count')
 
-lconstr = {''}
+lconstr = {
+    'transit_shelters_count': {'query': 'transit_shelters_count < transit_shelters_count.mean()'},
+    'red_light_cams_count': {'query': 'red_light_cams_count < red_light_cams_count.mean()'},
+    'schools_count': {'query': 'schools_count < schools_count.mean()'},
+    'wys_count': {'query': 'wys_count < wys_count.mean()'}
+}
 
 aopt = optimization.Optimizer(ask, lconstr, 'BayesianOptimization')
 #topt = optimization.Optimizer(tpt, 'BayesianOptimization')
