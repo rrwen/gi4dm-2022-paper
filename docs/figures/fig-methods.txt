@@ -1,0 +1,28 @@
+flowchart TB;
+
+data[("Geodata")]
+vars("Variables")
+geo["Geometry"]
+
+geobin{"(1) Geo-binning"}
+grid["Regularized Grid"]
+
+aml{"(2) AutoML"}
+y("Target<br>Variable (y)")
+t("Max Search<br>Time (t<sub>max</sub>)")
+m("Performance<br>Metric (m)")
+model["AutoML<br>Model"]
+imp["Variable<br>Importances"]
+
+opt{"(3) Prediction<br>Optimization"}
+constr("User Design<br>Constraints")
+minmax("Min/Max<br>Problem?")
+criteria("Stop<br>Criteria")
+geoint["Generated<br>Geo-interventions"]
+
+vars & geo --- data
+y & m & t --- aml --> imp --> constr
+constr & minmax & criteria --- opt
+grid --> opt --> geoint
+
+data --> geobin --> grid --> aml --> model --> opt
