@@ -1,6 +1,6 @@
 # Generative Design for Precision Geo-Interventions
 
-Richard Wen, Songnian Li
+Richard Wen, Songnian Li  
 rrwen.dev@gmail.com, snli@ryerson.ca
 
 * [Read Paper (PDF)](docs/wen_li_2022_gi4dm_paper.pdf)
