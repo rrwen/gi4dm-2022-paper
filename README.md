@@ -1,6 +1,13 @@
 # Generative Design for Precision Geo-Interventions
 
-Conference paper for Gi4DM and Urban Geo-Informatics 2022.
+Richard Wen, Songnian Li
+rrwen.dev@gmail.com, snli@ryerson.ca
+
+* [Read Paper (PDF)](docs/wen_li_2022_gi4dm_paper.pdf)
+
+## Abstract
+
+The purpose of this research is to develop an approach for a Spatial Decision Support System (SDSS) that integrates Geographic Information Systems (GIS), Automated Machine Learning (AutoML), and Hyperparameter Optimization (HPO) to generate precision geo-interventions based on standardized geospatial data and user design constraints. The geo-intervention generation approach involves three steps: (1) Geo-binning, (2) AutoML, and (3) Prediction Optimization. Geo-binning is used to standardize geospatial data into regularized grids as inputs into AutoML models. Prediction optimization generates geo-interventions by applying user-design constraints and optimizing AutoML model output to find optimized input variables that form precise geo-interventions. An experiment in reducing road traffic collisions using infrastructural changes in Toronto, Ontario, Canada was done to evaluate the geo-intervention generation approach. The results of the experiment found that changing the number of schools, red light cameras, and transit shelters in high traffic areas could potentially halve the total number of traffic collisions according to a 80 by 80 geo-binned grid Auto-Sklearn model with a Mean Absolute Error (MAE) of 117.68. It was also found that user design constraints heavily affected the prediction optimization step as when the areas were altered to an alternative grid of cells with scarce infrastructure, the number of predicted collisions rose by 6127 collisions. Thus, limitations of this study included subjectivity in user design constraints, scalability, and interactivity. Future work involves improving modelling/optimization efficiency and developing an interactive interface for exploring generated precision geo-interventions.
 
 ## History
 
