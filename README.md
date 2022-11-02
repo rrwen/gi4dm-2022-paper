@@ -3,8 +3,11 @@
 Richard Wen, Songnian Li  
 rrwen.dev@gmail.com, snli@ryerson.ca
 
+* [Read Publication](https://doi.org/10.5194/isprs-annals-X-3-W2-2022-37-2022)
 * [Read Paper (PDF)](docs/wen_li_2022_gi4dm_paper.pdf)
 * [View Slides (PDF)](docs/wen_li_2022_gi4dm_slides.pdf)
+* [Conference Website](https://www.gi4dm.net/2022/)
+* [Conference Programme](https://www.gi4dm.net/2022/programme/)
 
 ## Abstract
 
