@@ -3,7 +3,7 @@
 Richard Wen, Songnian Li  
 rrwen.dev@gmail.com, snli@ryerson.ca
 
-* Read Paper ([Web](https://doi.org/10.5194/isprs-annals-X-3-W2-2022-37-2022) | [PDF](docs/wen_li_2022_gi4dm_paper.pdf))
+* Read Paper ([Web](https://doi.org/10.5194/isprs-annals-X-3-W2-2022-37-2022) | [PDF](docs/wen_li_2022_gi4dm_paper_published.pdf))
 * Read Slides ([PDF](docs/wen_li_2022_gi4dm_slides.pdf))
 
 ## Abstract
@@ -15,6 +15,7 @@ The purpose of this research is to develop an approach for a Spatial Decision Su
 | Date | Note |
 | --- | --- |
 | Wednesday, November 2, 2022 8:30-10am (Beijing TZ) | Presented slides (12 min, 3 min questions) for Urban Geo-Info Session ([Link](https://www.gi4dm.net/2022/programme/)) |
+| Thursday, October 27, 2022 | Full paper published to ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial Information Sciences | ([PDF](docs/wen_li_2022_gi4dm_paper_published.pdf) \| [Web](https://doi.org/10.5194/isprs-annals-X-3-W2-2022-37-2022)) |
 | Tuesday, October 23, 2022 | Presentation slides submitted to Urban Geo-Information track for November 2, 2022 Urban Geo-Info Session at 8:30-10am ([PDF](docs/wen_li_2022_gi4dm_slides.pdf) \| [PPT](docs/wen_li_2022_gi4dm_slides.pptx)) |
 | Tuesday, September 20, 2022 | Full paper submitted to the Urban Geo-Information track ([PDF](docs/wen_li_2022_gi4dm_paper.pdf) \| [DOC](docs/wen_li_2022_gi4dm_paper.doc)) |
 | Thursday, September 1, 2022 | Abstract accepted to the Urban Geo-Inforomation track ([PDF](docs/wen_li_2022_gi4dm_abstract.pdf) \| [DOC](docs/wen_li_2022_gi4dm_abstract.doc)) |
